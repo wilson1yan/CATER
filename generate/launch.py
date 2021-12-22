@@ -3,8 +3,8 @@ import subprocess
 import argparse
 import numpy as np
 
-DATA_MOUNT_POINT = '/home/rgirdhar/singularity_mounts/data'
-OUT_DIR = 'Test'  # only running to print out the camera matrix
+DATA_MOUNT_POINT = '/home/wilson/data'
+OUT_DIR = 'max2_o4_8'  # only running to print out the camera matrix
 CAM_MOTION = False
 MAX_MOTIONS = 2
 
@@ -33,14 +33,12 @@ def run_blender(gpu_id):
     subprocess.call('sleep {}'.format(sleep_time), shell=True)
     cmd = '''
         CUDA_VISIBLE_DEVICES="{gpu_id}" \
-            singularity exec --nv -B /data:{data_mount_point} \
-            /home/rgirdhar/Software/singularity/spec_v0.img \
             {blender_path} \
             data/base_scene.blend \
             --background --python render_videos.py -- \
-            --num_images 50000 \
+            --num_images 5000 \
             --suppress_blender_logs \
-            --save_blendfiles 1 \
+            --save_blendfiles 0 \
             {cam_motion} \
             {max_motions} \
             --output_dir {output_dir}
@@ -49,8 +47,8 @@ def run_blender(gpu_id):
         gpu_id=gpu_id,
         cam_motion='--random_camera' if CAM_MOTION else '',
         max_motions='--max_motions={}'.format(MAX_MOTIONS),
-        blender_path='/home/rgirdhar/Software/graphics/blender/blender-2.79b-linux-glibc219-x86_64/blender',  # noQA
-        output_dir='{}/rgirdhar/CATER-release/{}/'.format(DATA_MOUNT_POINT, OUT_DIR),  # noQA
+        blender_path=f'/home/wilson/programs/blender-2.79b-linux-glibc219-x86_64_0/blender',  # noQA
+        output_dir='{}/CATER/{}/'.format(DATA_MOUNT_POINT, OUT_DIR),  # noQA
         data_mount_point=DATA_MOUNT_POINT)
     print('Running {}'.format(final_cmd))
     subprocess.call(final_cmd, shell=True)
@@ -59,7 +57,7 @@ def run_blender(gpu_id):
 args = parse_args()
 if args.gpus is None:
     ngpus = get_gpu_count()
-    gpu_ids = range(ngpus)
+    gpu_ids = list(range(ngpus))
 else:
     gpu_ids = [int(el) for el in args.gpus.split(',')]
 ngpus = len(gpu_ids)

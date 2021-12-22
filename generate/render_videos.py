@@ -83,10 +83,10 @@ parser.add_argument(
 
 # Settings for objects
 parser.add_argument(
-    '--min_objects', default=5, type=int,
+    '--min_objects', default=4, type=int,
     help="The minimum number of objects to place in each scene")
 parser.add_argument(
-    '--max_objects', default=10, type=int,
+    '--max_objects', default=8, type=int,
     help="The maximum number of objects to place in each scene")
 parser.add_argument(
     '--min_dist', default=0.25, type=float,
@@ -176,10 +176,10 @@ parser.add_argument(
          "GPU rendering to work. For specifying a GPU, use "
          "CUDA_VISIBLE_DEVICES before running singularity.")
 parser.add_argument(
-    '--width', default=320, type=int,
+    '--width', default=128, type=int,
     help="The width (in pixels) for the rendered images")
 parser.add_argument(
-    '--height', default=240, type=int,
+    '--height', default=128, type=int,
     help="The height (in pixels) for the rendered images")
 parser.add_argument(
     '--key_light_jitter', default=1.0, type=float,
@@ -212,7 +212,7 @@ parser.add_argument(
 
 # Video options
 parser.add_argument(
-    '--num_frames', default=300, type=int,
+    '--num_frames', default=80, type=int,
     help="Number of frames to render.")
 parser.add_argument(
     '--num_flips', default=10, type=int,
@@ -242,8 +242,8 @@ parser.add_argument(
     "-v", "--verbose", help="increase output verbosity",
     action="store_true")
 
-random.seed(42)
-np.random.seed(42)
+#random.seed(42)
+#np.random.seed(42)
 
 
 def mkdir_p(path):

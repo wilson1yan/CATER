@@ -21,7 +21,6 @@
   },
   "sizes": {
     "large": 0.75,
-    "medium": 0.5,
-    "small": 0.25
+    "medium": 0.5
   }
 }

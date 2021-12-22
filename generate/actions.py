@@ -152,6 +152,7 @@ def add_movements_multiObj_try(objects, start_frame, all_obj_locations,
 def _can_contain(ob1, ob2, other_objects, all_obj_locations, end_frame,
                  min_dist):
     """ Return true if ob1 can contain ob2. """
+    return False
     assert len(other_objects) == len(all_obj_locations)
     # Only cones do the contains, and can contain spl or smaller sphere/cones,
     # cylinders/cubes are too large
