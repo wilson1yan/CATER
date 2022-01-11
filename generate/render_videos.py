@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+import os.path as osp
 from __future__ import print_function
 import math
 import sys
@@ -18,6 +19,8 @@ import errno
 from movement_record import MovementRecord
 import logging
 import itertools
+import tempfile
+from collections import Counter
 
 
 """
@@ -176,10 +179,10 @@ parser.add_argument(
          "GPU rendering to work. For specifying a GPU, use "
          "CUDA_VISIBLE_DEVICES before running singularity.")
 parser.add_argument(
-    '--width', default=128, type=int,
+    '--width', default=64, type=int,
     help="The width (in pixels) for the rendered images")
 parser.add_argument(
-    '--height', default=128, type=int,
+    '--height', default=64, type=int,
     help="The height (in pixels) for the rendered images")
 parser.add_argument(
     '--key_light_jitter', default=1.0, type=float,
@@ -212,7 +215,7 @@ parser.add_argument(
 
 # Video options
 parser.add_argument(
-    '--num_frames', default=80, type=int,
+    '--num_frames', default=200, type=int,
     help="Number of frames to render.")
 parser.add_argument(
     '--num_flips', default=10, type=int,
@@ -872,6 +875,68 @@ def compute_all_relationships(scene_struct, eps=0.2):
                     related.add(j)
                 all_relationships[name].append(sorted(list(related)))
     return all_relationships
+
+
+def render_shadeless(blender_objects):
+  """
+  Render a version of the scene with shading disabled and unique materials
+  assigned to all objects, and return a set of all colors that should be in the
+  rendered image. The image itself is written to path. This is used to ensure
+  that all objects will be visible in the final rendered scene.
+  """
+  render_args = bpy.context.scene.render
+
+  # Cache the render args we are about to clobber
+  old_filepath = render_args.filepath
+  old_engine = render_args.engine
+  old_use_antialiasing = render_args.use_antialiasing
+
+  # Override some render settings to have flat shading
+  base_name = osp.basename(old_filepath)
+  base_name = base_name[:-4] + '_seg.avi'
+  render_args.filepath = osp.join(osp.dirname(old_filepath), base_name)
+  render_args.engine = 'BLENDER_RENDER'
+  render_args.use_antialiasing = False
+
+  # Move the lights and ground to layer 2 so they don't render
+  utils.set_layer(bpy.data.objects['Lamp_Key'], 2)
+  utils.set_layer(bpy.data.objects['Lamp_Fill'], 2)
+  utils.set_layer(bpy.data.objects['Lamp_Back'], 2)
+  utils.set_layer(bpy.data.objects['Ground'], 2)
+
+  # Add random shadeless materials to all objects
+  object_colors = set()
+  old_materials = []
+  for i, obj in enumerate(blender_objects):
+    old_materials.append(obj.data.materials[0])
+    bpy.ops.material.new()
+    mat = bpy.data.materials['Material']
+    mat.name = 'Material_%d' % i
+    while True:
+      r, g, b = [random.random() for _ in range(3)]
+      if (r, g, b) not in object_colors: break
+    object_colors.add((r, g, b))
+    mat.diffuse_color = [r, g, b]
+    mat.use_shadeless = True
+    obj.data.materials[0] = mat
+
+  # Render the scene
+  bpy.ops.render.render(animation=True)
+
+  # Undo the above; first restore the materials to objects
+  for mat, obj in zip(old_materials, blender_objects):
+    obj.data.materials[0] = mat
+
+  # Move the lights and ground back to layer 0
+  utils.set_layer(bpy.data.objects['Lamp_Key'], 0)
+  utils.set_layer(bpy.data.objects['Lamp_Fill'], 0)
+  utils.set_layer(bpy.data.objects['Lamp_Back'], 0)
+  utils.set_layer(bpy.data.objects['Ground'], 0)
+
+  # Set the render settings back to what they were
+  render_args.filepath = old_filepath
+  render_args.engine = old_engine
+  render_args.use_antialiasing = old_use_antialiasing
 
 
 if __name__ == '__main__':

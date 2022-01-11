@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 
 DATA_MOUNT_POINT = '/home/wilson/data'
-OUT_DIR = 'max2_o4_8'  # only running to print out the camera matrix
+OUT_DIR = 'test'  # only running to print out the camera matrix
 CAM_MOTION = False
 MAX_MOTIONS = 2
 
