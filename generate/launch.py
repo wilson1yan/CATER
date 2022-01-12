@@ -41,7 +41,7 @@ def run_blender(gpu_id):
             --save_blendfiles 0 \
             {cam_motion} \
             {max_motions} \
-            --output_dir {output_dir}
+            --output_dir {output_dir} --cpu
     '''
     final_cmd = cmd.format(
         gpu_id=gpu_id,

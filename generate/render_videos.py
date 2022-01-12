@@ -6,7 +6,8 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 import os.path as osp
-from __future__ import print_function
+import pickle
+#from __future__ import print_function
 import math
 import sys
 import random
@@ -215,7 +216,7 @@ parser.add_argument(
 
 # Video options
 parser.add_argument(
-    '--num_frames', default=200, type=int,
+    '--num_frames', default=80, type=int,
     help="Number of frames to render.")
 parser.add_argument(
     '--num_flips', default=10, type=int,
@@ -434,6 +435,7 @@ def setup_scene(
     scene_struct['movements'] = record.get_dict()
     with open(output_scene, 'w') as f:
         json.dump(scene_struct, f, indent=2)
+    return blender_objects
 
 
 def render_scene(
@@ -503,7 +505,7 @@ def render_scene(
             output_blendfile))
         bpy.ops.wm.open_mainfile(filepath=output_blendfile)
     else:
-        setup_scene(
+        blender_objects = setup_scene(
             args, num_objects, output_index, output_split,
             output_image, output_scene)
     print_camera_matrix()
@@ -523,6 +525,7 @@ def render_scene(
                     sys.stdout.flush()
                     os.close(1)
                     os.open(logfile, os.O_WRONLY)
+                render_segs(blender_objects)
                 bpy.ops.render.render(animation=True)
                 if args.suppress_blender_logs:
                     # disable output redirection
@@ -877,7 +880,7 @@ def compute_all_relationships(scene_struct, eps=0.2):
     return all_relationships
 
 
-def render_shadeless(blender_objects):
+def render_segs(blender_objects):
   """
   Render a version of the scene with shading disabled and unique materials
   assigned to all objects, and return a set of all colors that should be in the
@@ -893,8 +896,9 @@ def render_shadeless(blender_objects):
 
   # Override some render settings to have flat shading
   base_name = osp.basename(old_filepath)
-  base_name = base_name[:-4] + '_seg.avi'
-  render_args.filepath = osp.join(osp.dirname(old_filepath), base_name)
+  seg_name = base_name[:-4] + '_seg.avi'
+  json_name = base_name[:-4] + '_seg_colors.pkl'
+  render_args.filepath = osp.join(osp.dirname(old_filepath), seg_name)
   render_args.engine = 'BLENDER_RENDER'
   render_args.use_antialiasing = False
 
@@ -919,6 +923,8 @@ def render_shadeless(blender_objects):
     mat.diffuse_color = [r, g, b]
     mat.use_shadeless = True
     obj.data.materials[0] = mat
+
+  pickle.dump(object_colors, open(osp.join(osp.dirname(old_filepath), json_name), 'wb'))
 
   # Render the scene
   bpy.ops.render.render(animation=True)
