@@ -87,10 +87,10 @@ parser.add_argument(
 
 # Settings for objects
 parser.add_argument(
-    '--min_objects', default=4, type=int,
+    '--min_objects', default=5, type=int,
     help="The minimum number of objects to place in each scene")
 parser.add_argument(
-    '--max_objects', default=8, type=int,
+    '--max_objects', default=10, type=int,
     help="The maximum number of objects to place in each scene")
 parser.add_argument(
     '--min_dist', default=0.25, type=float,
@@ -216,7 +216,7 @@ parser.add_argument(
 
 # Video options
 parser.add_argument(
-    '--num_frames', default=80, type=int,
+    '--num_frames', default=100, type=int,
     help="Number of frames to render.")
 parser.add_argument(
     '--num_flips', default=10, type=int,
@@ -525,7 +525,8 @@ def render_scene(
                     sys.stdout.flush()
                     os.close(1)
                     os.open(logfile, os.O_WRONLY)
-                render_segs(blender_objects)
+                for k in range(len(blender_objects)):
+                  render_segs(blender_objects, k)
                 bpy.ops.render.render(animation=True)
                 if args.suppress_blender_logs:
                     # disable output redirection
@@ -880,7 +881,7 @@ def compute_all_relationships(scene_struct, eps=0.2):
     return all_relationships
 
 
-def render_segs(blender_objects):
+def render_segs(blender_objects, obj_id):
   """
   Render a version of the scene with shading disabled and unique materials
   assigned to all objects, and return a set of all colors that should be in the
@@ -896,8 +897,7 @@ def render_segs(blender_objects):
 
   # Override some render settings to have flat shading
   base_name = osp.basename(old_filepath)
-  seg_name = base_name[:-4] + '_seg.avi'
-  json_name = base_name[:-4] + '_seg_colors.pkl'
+  seg_name = base_name[:-4] + '_seg_{obj_id}.avi'.format(obj_id=obj_id)
   render_args.filepath = osp.join(osp.dirname(old_filepath), seg_name)
   render_args.engine = 'BLENDER_RENDER'
   render_args.use_antialiasing = False
@@ -916,15 +916,14 @@ def render_segs(blender_objects):
     bpy.ops.material.new()
     mat = bpy.data.materials['Material']
     mat.name = 'Material_%d' % i
-    while True:
-      r, g, b = [random.random() for _ in range(3)]
-      if (r, g, b) not in object_colors: break
+    if i == obj_id:
+        r, g, b = 1., 1., 1.
+    else:
+        r, g, b = 0., 0., 0.
     object_colors.add((r, g, b))
     mat.diffuse_color = [r, g, b]
     mat.use_shadeless = True
     obj.data.materials[0] = mat
-
-  pickle.dump(object_colors, open(osp.join(osp.dirname(old_filepath), json_name), 'wb'))
 
   # Render the scene
   bpy.ops.render.render(animation=True)

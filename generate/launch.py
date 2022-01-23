@@ -4,9 +4,9 @@ import argparse
 import numpy as np
 
 DATA_MOUNT_POINT = '/home/wilson/data'
-OUT_DIR = 'test'  # only running to print out the camera matrix
+OUT_DIR = 'cater_obj10'  # only running to print out the camera matrix
 CAM_MOTION = False
-MAX_MOTIONS = 2
+MAX_MOTIONS = 99999
 
 
 def parse_args():
@@ -36,7 +36,7 @@ def run_blender(gpu_id):
             {blender_path} \
             data/base_scene.blend \
             --background --python render_videos.py -- \
-            --num_images 5000 \
+            --num_images 10000 \
             --suppress_blender_logs \
             --save_blendfiles 0 \
             {cam_motion} \
@@ -47,7 +47,7 @@ def run_blender(gpu_id):
         gpu_id=gpu_id,
         cam_motion='--random_camera' if CAM_MOTION else '',
         max_motions='--max_motions={}'.format(MAX_MOTIONS),
-        blender_path=f'/home/wilson/programs/blender-2.79b-linux-glibc219-x86_64_0/blender',  # noQA
+        blender_path='/home/wilson/blender-2.79b-linux-glibc219-x86_64_0/blender',  # noQA
         output_dir='{}/CATER/{}/'.format(DATA_MOUNT_POINT, OUT_DIR),  # noQA
         data_mount_point=DATA_MOUNT_POINT)
     print('Running {}'.format(final_cmd))
